@@ -49,21 +49,36 @@ public static class Utils
 
     public static void AskOpenUrl(string url)
     {
+        Console.WriteLine();
+
         var answer = AnsiConsole.Prompt(
-            new SelectionPrompt<bool>()
+            new SelectionPrompt<string>()
                 .Title("Would you like to open this URL with your default browser?")
                 .AddChoices([
-                    true,
-                    false
+                    "Yes",
+                    "No"
                 ])
         );
 
-        if (!answer)
+        if (answer == "No")
         {
             return;
         }
 
-        Process.Start(url);
+        try
+        {
+            Process.Start(
+            new ProcessStartInfo()
+            {
+                FileName = url,
+                UseShellExecute = true
+            }
+        );
+        }
+        catch
+        {
+            AnsiConsole.MarkupLine("[red]Failed to open link. Please open it manually.[/]");
+        }
     }
 
     private static Keyset AskKeysetValues()
