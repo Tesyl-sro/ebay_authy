@@ -63,7 +63,7 @@ class Program
             Environment.Exit(1);
         }
 
-        if (response.ErrorMessage.Length > 0)
+        if (response.ErrorMessage != null)
         {
             AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
             Environment.Exit(1);
