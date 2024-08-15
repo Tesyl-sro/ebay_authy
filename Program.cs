@@ -26,6 +26,9 @@ class Program
 
         AnsiConsole.MarkupLine("[green]Please log in with the following URL:[/] " + authUrl);
         Utils.AskOpenUrl(authUrl);
+
+        AnsiConsole.MarkupLine("[green]Paste in the URL [bold]after[/] authentication:[/]");
+        var redirect_url = Console.ReadLine();
     }
 
     private static void TryCredentialSetup(Keyset keyset)
