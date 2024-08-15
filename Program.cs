@@ -1,31 +1,55 @@
 ﻿using eBay.ApiClient.Auth.OAuth2;
 using eBay.ApiClient.Auth.OAuth2.Model;
+using Spectre.Console;
+using Utils = ebay_authy.Utilities.Utils;
 
 namespace ebay_authy;
 
 class Program
 {
+    static readonly OAuthEnvironment ENVIRONMENT = OAuthEnvironment.PRODUCTION;
+    static readonly IList<string> SCOPES = [
+        "https://api.ebay.com/oauth/api_scope"
+    ];
+
     static void Main(string[] args)
     {
-        CredentialUtil.Load("ebay-config.yml");
-        Console.WriteLine("Credentials loaded");
-
-        var env = OAuthEnvironment.PRODUCTION;
-        IList<string> scopes = ["https://api.ebay.com/oauth/api_scope"];
+        Utils.Greet();
+        var keyset = Utils.AskKeyset();
 
         var api = new OAuth2Api();
-        var response = api.GetApplicationToken(env, scopes);
+        var appToken = GetApplicationToken(api);
+        var authUrl = api.GenerateUserAuthorizationUrl(ENVIRONMENT, SCOPES, "");
 
-        var url = api.GenerateUserAuthorizationUrl(env, scopes, "");
-        Console.Write("Log in: ");
-        Console.WriteLine(url);
+        AnsiConsole.MarkupLine("[green]Please log in with the following URL:[/] " + authUrl);
+        Utils.AskOpenUrl(authUrl);
+    }
 
-        Console.Write("Enter response code: ");
+    private static string GetApplicationToken(OAuth2Api api)
+    {
+        OAuthResponse? response = null;
+        try
+        {
+            response = api.GetApplicationToken(ENVIRONMENT, SCOPES);
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine("[red bold]Error while getting application token:[/] " + e.Message);
+            Environment.Exit(1);
+        }
 
-        var response_code = Console.ReadLine();
-        var access_token_request = api.ExchangeCodeForAccessToken(env, response_code);
-        var access_token = api.GetAccessToken(env, access_token_request.RefreshToken.Token, scopes);
+        if (response == null)
+        {
+            AnsiConsole.MarkupLine("[red bold]Got no response[/]");
+            Environment.Exit(1);
+        }
 
-        Console.WriteLine(access_token.AccessToken.Token);
+        if (response.ErrorMessage.Length > 0)
+        {
+            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
+            Environment.Exit(1);
+        }
+
+        return response.AccessToken.Token;
     }
 }
