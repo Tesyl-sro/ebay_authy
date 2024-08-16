@@ -32,9 +32,6 @@ class Program
         TryCredentialSetup(keyset);
 
         var api = new OAuth2Api();
-        var appTokenResponse = api.GetApplicationToken(ENVIRONMENT, SCOPES);
-        HandleOathResponse(ref appTokenResponse);
-
         var authUrl = api.GenerateUserAuthorizationUrl(ENVIRONMENT, SCOPES, "");
         AnsiConsole.MarkupLine("[green]Please log in with the following URL:[/] " + authUrl);
         Utils.AskOpenUrl(authUrl);
