@@ -16,7 +16,7 @@ class Program
     static void Main(string[] args)
     {
         Utils.Greet();
-        var keyset = Utils.AskKeyset();
+        var keyset = Utils.AskKeyset(ENVIRONMENT);
 
         TryCredentialSetup(keyset);
 

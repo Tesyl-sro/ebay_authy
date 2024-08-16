@@ -1,4 +1,6 @@
 using System.Text;
+using eBay.ApiClient.Auth.OAuth2;
+using eBay.ApiClient.Auth.OAuth2.Model;
 using Spectre.Console;
 using YamlDotNet.Core.Tokens;
 
@@ -11,32 +13,53 @@ public class Keyset(string client_id, string dev_id, string cert_id, string redi
     private readonly string cert_id = cert_id;
     private readonly string redirect_uri = redirect_uri;
 
+    public static Keyset FromConfigFile(string path, OAuthEnvironment env)
+    {
+        try
+        {
+            CredentialUtil.Load(path);
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine("[red bold]Error while reading config file:[/] " + e.Message);
+            Environment.Exit(1);
+        }
+
+        var credentials = CredentialUtil.GetCredentials(env);
+        var clientId = credentials.Get(CredentialType.APP_ID);
+        var devId = credentials.Get(CredentialType.DEV_ID);
+        var certId = credentials.Get(CredentialType.CERT_ID);
+        var redirectUrl = credentials.Get(CredentialType.REDIRECT_URI);
+
+        return new Keyset(clientId, devId, certId, redirectUrl);
+    }
+
     public static Keyset FromEnvironment()
     {
-        string? client_id = Environment.GetEnvironmentVariable("EBAY_CLIENT_ID");
-        string? dev_id = Environment.GetEnvironmentVariable("EBAY_DEV_ID");
-        string? cert_id = Environment.GetEnvironmentVariable("EBAY_CERT_ID");
-        string? redirect_uri = Environment.GetEnvironmentVariable("EBAY_REDIRECT_URI");
+        string? clientId = Environment.GetEnvironmentVariable("EBAY_CLIENT_ID");
+        string? devId = Environment.GetEnvironmentVariable("EBAY_DEV_ID");
+        string? certId = Environment.GetEnvironmentVariable("EBAY_CERT_ID");
+        string? redirectUrl = Environment.GetEnvironmentVariable("EBAY_REDIRECT_URI");
 
-        if (client_id == null)
+        if (clientId == null)
         {
             AnsiConsole.MarkupLine("[red bold]EBAY_CLIENT_ID[/] not defined");
             goto Error;
         }
 
-        if (dev_id == null)
+        if (devId == null)
         {
             AnsiConsole.MarkupLine("[red bold]EBAY_DEV_ID[/] not defined");
             goto Error;
         }
 
-        if (cert_id == null)
+        if (certId == null)
         {
             AnsiConsole.MarkupLine("[red bold]EBAY_CERT_ID[/] not defined");
             goto Error;
         }
 
-        if (redirect_uri == null)
+        if (redirectUrl == null)
         {
             AnsiConsole.MarkupLine("[red bold]EBAY_REDIRECT_URI[/] not defined");
             goto Error;
@@ -48,7 +71,7 @@ public class Keyset(string client_id, string dev_id, string cert_id, string redi
         Environment.Exit(1);
 
     Success:
-        return new Keyset(client_id, dev_id, cert_id, redirect_uri);
+        return new Keyset(clientId, devId, certId, redirectUrl);
     }
 
     public string GetClientId()

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Web;
+using eBay.ApiClient.Auth.OAuth2.Model;
 using ebay_authy.Helpers;
 using Spectre.Console;
 
@@ -15,13 +16,13 @@ public static class Utils
 #if DEBUG
         AnsiConsole.MarkupLine("[yellow]You are using a Debug build![/]");
 #endif
-
         Console.WriteLine();
     }
 
-    public static Keyset AskKeyset()
+    public static Keyset AskKeyset(OAuthEnvironment env)
     {
         const string CHOICE_ENV = "Environment variables (EBAY_CLIENT_ID, EBAY_DEV_ID, EBAY_CERT_ID, EBAY_REDIRECT_URI)";
+        const string CHOICE_CONFIG = "Config file (see https://github.com/eBay/ebay-oauth-csharp-client)";
         const string CHOICE_MANUAL = "Enter manually";
 
         var choice = AnsiConsole.Prompt(
@@ -29,6 +30,7 @@ public static class Utils
                 .Title("How would you like to load your Ebay keyset (Client ID, Dev ID, Cert ID, Redirect URI)?")
                 .AddChoices([
                     CHOICE_ENV,
+                    CHOICE_CONFIG,
                     CHOICE_MANUAL
                 ])
         );
@@ -36,16 +38,24 @@ public static class Utils
         switch (choice)
         {
             case CHOICE_ENV:
-                {
-                    return Keyset.FromEnvironment();
-                }
+                return Keyset.FromEnvironment();
             case CHOICE_MANUAL:
+                return AskKeysetValues();
+            case CHOICE_CONFIG:
                 {
-                    return AskKeysetValues();
+                    var path = AskConfigPath();
+                    return Keyset.FromConfigFile(path, env);
                 }
             default:
                 throw new Exception("unreachable");
         }
+    }
+
+    private static string AskConfigPath()
+    {
+        return AnsiConsole.Prompt(
+            new TextPrompt<string>("Enter path to configuration file: ", null)
+        );
     }
 
     public static void AskOpenUrl(string url)
@@ -86,10 +96,10 @@ public static class Utils
     {
         var parsedUrl = redirectUrl.Split('?')[1];
         var paramsCollection = HttpUtility.ParseQueryString(parsedUrl);
-
         var code = paramsCollection.Get("code");
+        var decoded = HttpUtility.UrlDecode(code);
 
-        return code;
+        return decoded;
     }
 
     private static Keyset AskKeysetValues()
