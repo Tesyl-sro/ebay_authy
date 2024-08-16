@@ -21,9 +21,10 @@ class Program
         TryCredentialSetup(keyset);
 
         var api = new OAuth2Api();
-        GetApplicationToken(api);
-        var authUrl = api.GenerateUserAuthorizationUrl(ENVIRONMENT, SCOPES, "");
+        var appTokenResponse = api.GetApplicationToken(ENVIRONMENT, SCOPES);
+        HandleOathResponse(ref appTokenResponse);
 
+        var authUrl = api.GenerateUserAuthorizationUrl(ENVIRONMENT, SCOPES, "");
         AnsiConsole.MarkupLine("[green]Please log in with the following URL:[/] " + authUrl);
         Utils.AskOpenUrl(authUrl);
 
@@ -37,29 +38,16 @@ class Program
             Environment.Exit(1);
         }
 
-        var refreshToken = TryExchangeCodeForAccessToken(api, authCode);
-        var accessToken = TryGetAccessToken(refreshToken, api);
+        var exchnageResponse = api.ExchangeCodeForAccessToken(ENVIRONMENT, authCode);
+        HandleOathResponse(ref exchnageResponse);
 
-        AnsiConsole.MarkupLine("[green bold]Success![/]");
+        AnsiConsole.MarkupLine("\n[green bold]Success![/]");
         Console.WriteLine();
-
-        Console.WriteLine(accessToken);
+        Console.WriteLine(exchnageResponse!.AccessToken.Token);
     }
 
-    private static string TryGetAccessToken(string refreshToken, OAuth2Api api)
+    private static void HandleOathResponse(ref OAuthResponse? response)
     {
-        OAuthResponse? response = null;
-
-        try
-        {
-            api.GetAccessToken(ENVIRONMENT, refreshToken, SCOPES);
-        }
-        catch (Exception e)
-        {
-            AnsiConsole.MarkupLine("[red bold]Error while performing access token request:[/] " + e.Message);
-            Environment.Exit(1);
-        }
-
         if (response == null)
         {
             AnsiConsole.MarkupLine("[red bold]Got no response[/]");
@@ -71,37 +59,6 @@ class Program
             AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
             Environment.Exit(1);
         }
-
-        return response.AccessToken.Token;
-    }
-
-    private static string TryExchangeCodeForAccessToken(OAuth2Api api, string authCode)
-    {
-        OAuthResponse? response = null;
-
-        try
-        {
-            response = api.ExchangeCodeForAccessToken(ENVIRONMENT, authCode);
-        }
-        catch (Exception e)
-        {
-            AnsiConsole.MarkupLine("[red bold]Error while performing access token request:[/] " + e.Message);
-            Environment.Exit(1);
-        }
-
-        if (response == null)
-        {
-            AnsiConsole.MarkupLine("[red bold]Got no response[/]");
-            Environment.Exit(1);
-        }
-
-        if (response.ErrorMessage != null)
-        {
-            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
-            Environment.Exit(1);
-        }
-
-        return response.RefreshToken.Token;
     }
 
     private static void TryCredentialSetup(Keyset keyset)
@@ -118,33 +75,5 @@ class Program
             AnsiConsole.MarkupLine("[red bold]Error while setting up credentials:[/] " + e.Message);
             Environment.Exit(1);
         }
-    }
-
-    private static string GetApplicationToken(OAuth2Api api)
-    {
-        OAuthResponse? response = null;
-        try
-        {
-            response = api.GetApplicationToken(ENVIRONMENT, SCOPES);
-        }
-        catch (Exception e)
-        {
-            AnsiConsole.MarkupLine("[red bold]Error while getting application token:[/] " + e.Message);
-            Environment.Exit(1);
-        }
-
-        if (response == null)
-        {
-            AnsiConsole.MarkupLine("[red bold]Got no response[/]");
-            Environment.Exit(1);
-        }
-
-        if (response.ErrorMessage != null)
-        {
-            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
-            Environment.Exit(1);
-        }
-
-        return response.AccessToken.Token;
     }
 }
