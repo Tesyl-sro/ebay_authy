@@ -34,8 +34,7 @@ class Program
 
         if (authCode == null)
         {
-            AnsiConsole.MarkupLine("[red bold]Could not parse auth code[/]");
-            Environment.Exit(1);
+            ErrorAndExit("Could not parse auth code");
         }
 
         var exchnageResponse = api.ExchangeCodeForAccessToken(ENVIRONMENT, authCode);
@@ -56,8 +55,7 @@ class Program
 
         if (response.ErrorMessage != null)
         {
-            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
-            Environment.Exit(1);
+            ErrorAndExit("API error", response.ErrorMessage);
         }
     }
 
@@ -72,8 +70,24 @@ class Program
         }
         catch (Exception e)
         {
-            AnsiConsole.MarkupLine("[red bold]Error while setting up credentials:[/] " + e.Message);
-            Environment.Exit(1);
+            ErrorAndExit("Error while setting up credentials", e);
         }
+    }
+
+    private static void ErrorAndExit(string message)
+    {
+        AnsiConsole.MarkupLine("[red bold]" + message + "[/]");
+        Environment.Exit(1);
+    }
+
+    private static void ErrorAndExit(string prefix, string errorMessage)
+    {
+        AnsiConsole.MarkupLine("[red bold]" + prefix + "[/]: " + errorMessage);
+        Environment.Exit(1);
+    }
+
+    private static void ErrorAndExit(string prefix, Exception e)
+    {
+        ErrorAndExit(prefix, e.Message);
     }
 }
