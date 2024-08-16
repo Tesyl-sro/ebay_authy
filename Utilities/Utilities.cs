@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Web;
 using ebay_authy.Helpers;
 using Spectre.Console;
 
@@ -79,6 +80,16 @@ public static class Utils
         {
             AnsiConsole.MarkupLine("[red]Failed to open link. Please open it manually.[/]");
         }
+    }
+
+    public static string? ParseAuthCode(string redirectUrl)
+    {
+        var parsedUrl = redirectUrl.Split('?')[1];
+        var paramsCollection = HttpUtility.ParseQueryString(parsedUrl);
+
+        var code = paramsCollection.Get("code");
+
+        return code;
     }
 
     private static Keyset AskKeysetValues()

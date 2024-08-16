@@ -28,7 +28,80 @@ class Program
         Utils.AskOpenUrl(authUrl);
 
         AnsiConsole.MarkupLine("[green]Paste in the URL [bold]after[/] authentication:[/]");
-        var redirect_url = Console.ReadLine();
+        var redirectUrl = Console.ReadLine();
+        var authCode = Utils.ParseAuthCode(redirectUrl!);
+
+        if (authCode == null)
+        {
+            AnsiConsole.MarkupLine("[red bold]Could not parse auth code[/]");
+            Environment.Exit(1);
+        }
+
+        var refreshToken = TryExchangeCodeForAccessToken(api, authCode);
+        var accessToken = TryGetAccessToken(refreshToken, api);
+
+        AnsiConsole.MarkupLine("[green bold]Success![/]");
+        Console.WriteLine();
+
+        Console.WriteLine(accessToken);
+    }
+
+    private static string TryGetAccessToken(string refreshToken, OAuth2Api api)
+    {
+        OAuthResponse? response = null;
+
+        try
+        {
+            api.GetAccessToken(ENVIRONMENT, refreshToken, SCOPES);
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine("[red bold]Error while performing access token request:[/] " + e.Message);
+            Environment.Exit(1);
+        }
+
+        if (response == null)
+        {
+            AnsiConsole.MarkupLine("[red bold]Got no response[/]");
+            Environment.Exit(1);
+        }
+
+        if (response.ErrorMessage != null)
+        {
+            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
+            Environment.Exit(1);
+        }
+
+        return response.AccessToken.Token;
+    }
+
+    private static string TryExchangeCodeForAccessToken(OAuth2Api api, string authCode)
+    {
+        OAuthResponse? response = null;
+
+        try
+        {
+            response = api.ExchangeCodeForAccessToken(ENVIRONMENT, authCode);
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.MarkupLine("[red bold]Error while performing access token request:[/] " + e.Message);
+            Environment.Exit(1);
+        }
+
+        if (response == null)
+        {
+            AnsiConsole.MarkupLine("[red bold]Got no response[/]");
+            Environment.Exit(1);
+        }
+
+        if (response.ErrorMessage != null)
+        {
+            AnsiConsole.MarkupLine("[red bold]API error:[/] " + response.ErrorMessage);
+            Environment.Exit(1);
+        }
+
+        return response.RefreshToken.Token;
     }
 
     private static void TryCredentialSetup(Keyset keyset)
